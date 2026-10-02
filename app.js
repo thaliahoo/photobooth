@@ -49,10 +49,6 @@ function wait(milliseconds) {
 }
 
 
-/* =========================
-   IPAD CAMERA
-========================= */
-
 async function startCamera() {
     try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -92,10 +88,6 @@ function stopCamera() {
 }
 
 
-/* =========================
-   COUNTDOWN
-========================= */
-
 async function runCountdown() {
     readyMessage.textContent = "Get ready!";
 
@@ -115,10 +107,6 @@ async function runCountdown() {
 }
 
 
-/* =========================
-   FLASH
-========================= */
-
 async function triggerFlash() {
     flash.classList.add("active");
 
@@ -127,10 +115,6 @@ async function triggerFlash() {
     flash.classList.remove("active");
 }
 
-
-/* =========================
-   TAKE PHOTO
-========================= */
 
 function takePhoto() {
     if (!camera.videoWidth || !camera.videoHeight) {
@@ -145,12 +129,6 @@ function takePhoto() {
         captureCanvas.getContext("2d");
 
     context.save();
-
-    /*
-       Flip the image horizontally
-       so it matches the mirrored
-       camera preview.
-    */
 
     context.translate(
         captureCanvas.width,
@@ -179,10 +157,6 @@ function takePhoto() {
 }
 
 
-/* =========================
-   PROGRESS
-========================= */
-
 function updateProgress() {
     const percentage =
         (currentPhoto / TOTAL_PHOTOS) * 100;
@@ -191,10 +165,6 @@ function updateProgress() {
         percentage + "%";
 }
 
-
-/* =========================
-   PHOTO SESSION
-========================= */
 
 async function startPhotoSession() {
     photos = [];
@@ -250,10 +220,6 @@ async function startPhotoSession() {
 }
 
 
-/* =========================
-   REVIEW
-========================= */
-
 function showReview() {
     photoGrid.innerHTML = "";
 
@@ -273,10 +239,6 @@ function showReview() {
 }
 
 
-/* =========================
-   RETAKE
-========================= */
-
 function retakePhotos() {
     photos = [];
 
@@ -288,10 +250,6 @@ function retakePhotos() {
 }
 
 
-/* =========================
-   CREATE PHOTO STRIP
-========================= */
-
 function createPhotoStrip() {
     if (photos.length !== TOTAL_PHOTOS) {
         alert(
@@ -300,6 +258,14 @@ function createPhotoStrip() {
 
         return;
     }
+
+
+    /*
+        4x6 inch paper at 300 DPI
+
+        4 inches = 1200 pixels
+        6 inches = 1800 pixels
+    */
 
     const canvasWidth = 1200;
     const canvasHeight = 1800;
@@ -310,6 +276,11 @@ function createPhotoStrip() {
     const context =
         stripCanvas.getContext("2d");
 
+
+    /*
+        WHITE PAPER BACKGROUND
+    */
+
     context.fillStyle = "#ffffff";
 
     context.fillRect(
@@ -319,20 +290,52 @@ function createPhotoStrip() {
         canvasHeight
     );
 
+
+    /*
+        STRIP SETTINGS
+
+        Each strip:
+        Width = 520 px
+        Height = 1680 px
+
+        White outside border:
+        10 px left
+        10 px right
+        20 px top
+
+        Bottom white space:
+        300 px = 1 inch
+
+        Gap between photos:
+        15 px
+
+        The photos are made
+        slightly larger by
+        reducing the side border.
+    */
+
     const stripWidth = 520;
+
     const stripHeight = 1680;
 
     const leftStripX = 50;
+
     const rightStripX = 630;
 
     const topMargin = 60;
 
     const sideBorder = 10;
+
     const topBorder = 20;
 
     const bottomWhiteSpace = 300;
 
     const photoGap = 15;
+
+
+    /*
+        PHOTO AREA
+    */
 
     const photoAreaX =
         leftStripX +
@@ -342,35 +345,63 @@ function createPhotoStrip() {
         stripWidth -
         (sideBorder * 2);
 
+
+    /*
+        PHOTO HEIGHT
+
+        Keep a full 1-inch
+        white section at
+        the bottom.
+    */
+
     const photoAreaHeight =
         stripHeight -
         topBorder -
         bottomWhiteSpace;
 
+
+    /*
+        Calculate the total
+        space used by the
+        three photo gaps.
+    */
+
     const totalGapHeight =
         photoGap *
         (TOTAL_PHOTOS - 1);
 
+
+    /*
+        Calculate the space
+        available for the
+        actual photos.
+    */
+
     const totalPhotoHeight =
         photoAreaHeight -
         totalGapHeight;
+
 
     const photoHeight =
         totalPhotoHeight /
         TOTAL_PHOTOS;
 
 
-    /* LEFT STRIP */
+    /*
+        LEFT STRIP
+    */
 
     for (
         let i = 0;
         i < TOTAL_PHOTOS;
         i++
     ) {
+
         const y =
             topMargin +
             topBorder +
             (i * (photoHeight + photoGap));
+
 
         drawCoverImage(
             context,
@@ -383,21 +414,26 @@ function createPhotoStrip() {
     }
 
 
-    /* RIGHT STRIP */
+    /*
+        RIGHT STRIP
+    */
 
     const rightPhotoAreaX =
         rightStripX +
         sideBorder;
+
 
     for (
         let i = 0;
         i < TOTAL_PHOTOS;
         i++
     ) {
+
         const y =
             topMargin +
             topBorder +
             (i * (photoHeight + photoGap));
+
 
         drawCoverImage(
             context,
@@ -410,11 +446,19 @@ function createPhotoStrip() {
     }
 
 
-    /* CENTER CUTTING LINE */
+    /*
+        DASHED CENTER
+        CUTTING LINE
+    */
 
     context.strokeStyle = "#999999";
+
     context.lineWidth = 2;
-    context.setLineDash([10, 10]);
+
+    context.setLineDash([
+        10,
+        10
+    ]);
 
     context.beginPath();
 
@@ -432,13 +476,14 @@ function createPhotoStrip() {
 
     context.setLineDash([]);
 
+
+    /*
+        SHOW FINISHED STRIP
+    */
+
     showScreen(stripScreen);
 }
 
-
-/* =========================
-   DRAW PHOTO
-========================= */
 
 function drawCoverImage(
     context,
@@ -448,8 +493,10 @@ function drawCoverImage(
     width,
     height
 ) {
+
     const image =
         new Image();
+
 
     image.onload = function() {
 
@@ -462,8 +509,11 @@ function drawCoverImage(
             height;
 
         let drawWidth;
+
         let drawHeight;
+
         let offsetX;
+
         let offsetY;
 
 
@@ -510,6 +560,7 @@ function drawCoverImage(
 
         context.clip();
 
+
         context.drawImage(
             image,
             offsetX,
@@ -518,16 +569,14 @@ function drawCoverImage(
             drawHeight
         );
 
+
         context.restore();
     };
+
 
     image.src = imageSource;
 }
 
-
-/* =========================
-   PRINT
-========================= */
 
 function printPhotoStrip() {
 
@@ -536,11 +585,13 @@ function printPhotoStrip() {
             "image/png"
         );
 
+
     const printWindow =
         window.open(
             "",
             "_blank"
         );
+
 
     if (!printWindow) {
 
@@ -553,7 +604,6 @@ function printPhotoStrip() {
 
 
     printWindow.document.write(`
-
         <!DOCTYPE html>
 
         <html>
@@ -635,13 +685,10 @@ function printPhotoStrip() {
         </html>
     `);
 
+
     printWindow.document.close();
 }
 
-
-/* =========================
-   NEXT SESSION
-========================= */
 
 function nextSession() {
 
@@ -653,8 +700,11 @@ function nextSession() {
 
     photoGrid.innerHTML = "";
 
+
     stripCanvas.width = 1;
+
     stripCanvas.height = 1;
+
 
     progressBar.style.width = "0%";
 
@@ -666,13 +716,14 @@ function nextSession() {
     readyMessage.textContent =
         "Get ready!";
 
+
     showScreen(startScreen);
 }
 
 
-/* =========================
-   BUTTONS
-========================= */
+/*
+    BUTTON EVENTS
+*/
 
 startButton.addEventListener(
     "click",
@@ -700,8 +751,8 @@ nextSessionButton.addEventListener(
 );
 
 
-/* =========================
-   INITIAL SCREEN
-========================= */
+/*
+    START ON HOME SCREEN
+*/
 
 showScreen(startScreen);
