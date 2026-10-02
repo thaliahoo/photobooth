@@ -4,7 +4,6 @@ const COUNTDOWN_SECONDS = 3;
 let photos = [];
 let currentPhoto = 0;
 let cameraStream = null;
-let selectedCameraId = null;
 
 const startScreen = document.getElementById("startScreen");
 const cameraScreen = document.getElementById("cameraScreen");
@@ -33,10 +32,6 @@ const printButton = document.getElementById("printButton");
 const nextSessionButton = document.getElementById("nextSessionButton");
 
 
-/* =========================================================
-   SCREEN CONTROL
-========================================================= */
-
 function showScreen(screen) {
     startScreen.classList.add("hidden");
     cameraScreen.classList.add("hidden");
@@ -47,10 +42,6 @@ function showScreen(screen) {
 }
 
 
-/* =========================================================
-   GENERAL WAIT FUNCTION
-========================================================= */
-
 function wait(milliseconds) {
     return new Promise(function(resolve) {
         setTimeout(resolve, milliseconds);
@@ -58,444 +49,115 @@ function wait(milliseconds) {
 }
 
 
-/* =========================================================
-   FIND FUJIFILM X-T50
-========================================================= */
-
-async function findFujifilmCamera() {
-
-    if (
-        !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia
-    ) {
-        alert(
-            "This browser does not support camera access."
-        );
-
-        return null;
-    }
-
-
-    /*
-        First request temporary camera access.
-
-        Safari may not reveal camera names
-        until permission has been granted.
-    */
-
-    let temporaryStream = null;
-
-    try {
-
-        temporaryStream =
-            await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: false
-            });
-
-    } catch (error) {
-
-        console.error(
-            "Initial camera permission error:",
-            error
-        );
-
-        alert(
-            "Please allow camera access for this website."
-        );
-
-        return null;
-    }
-
-
-    /*
-        Stop the temporary camera.
-
-        We will reopen the specific
-        camera after finding it.
-    */
-
-    temporaryStream
-        .getTracks()
-        .forEach(function(track) {
-            track.stop();
-        });
-
-
-    /*
-        Ask Safari what cameras are available.
-    */
-
-    let devices;
-
-    try {
-
-        devices =
-            await navigator.mediaDevices.enumerateDevices();
-
-    } catch (error) {
-
-        console.error(
-            "Could not list cameras:",
-            error
-        );
-
-        alert(
-            "The iPad could not list the available cameras."
-        );
-
-        return null;
-    }
-
-
-    /*
-        Only look at video cameras.
-    */
-
-    const videoDevices =
-        devices.filter(function(device) {
-
-            return device.kind === "videoinput";
-
-        });
-
-
-    console.log(
-        "Available cameras:"
-    );
-
-    videoDevices.forEach(function(device) {
-
-        console.log(
-            device.label,
-            device.deviceId
-        );
-
-    });
-
-
-    /*
-        Search for Fujifilm / X-T50.
-
-        Different systems may expose
-        slightly different names, so we
-        check several possibilities.
-    */
-
-    const fujifilmCamera =
-        videoDevices.find(function(device) {
-
-            const label =
-                (device.label || "").toLowerCase();
-
-            return (
-                label.includes("x-t50") ||
-                label.includes("xt50") ||
-                label.includes("fujifilm") ||
-                label.includes("fuji")
-            );
-
-        });
-
-
-    /*
-        If X-T50 was found,
-        remember its device ID.
-    */
-
-    if (fujifilmCamera) {
-
-        selectedCameraId =
-            fujifilmCamera.deviceId;
-
-        console.log(
-            "FUJIFILM CAMERA FOUND:",
-            fujifilmCamera.label
-        );
-
-        return fujifilmCamera;
-    }
-
-
-    /*
-        X-T50 was not found.
-    */
-
-    console.log(
-        "FUJIFILM CAMERA NOT FOUND."
-    );
-
-    let cameraList = "";
-
-    videoDevices.forEach(function(device, index) {
-
-        cameraList +=
-            (index + 1) +
-            ". " +
-            (device.label || "Unnamed camera") +
-            "\n";
-
-    });
-
-
-    alert(
-        "The Fujifilm X-T50 was not detected by Safari.\n\n" +
-        "Cameras Safari currently sees:\n\n" +
-        cameraList +
-        "\n\n" +
-        "Make sure the X-T50 is connected by USB-C and " +
-        "set to USB WEBCAM mode."
-    );
-
-
-    return null;
-}
-
-
-/* =========================================================
-   START FUJIFILM CAMERA
-========================================================= */
+/* =========================
+   IPAD CAMERA
+========================= */
 
 async function startCamera() {
-
     try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "user"
+            },
+            audio: false
+        });
 
-        /*
-            Find the X-T50.
-        */
-
-        const fujifilmCamera =
-            await findFujifilmCamera();
-
-
-        if (!fujifilmCamera) {
-
-            return false;
-
-        }
-
-
-        /*
-            Make sure any previous
-            camera stream is stopped.
-        */
-
-        stopCamera();
-
-
-        /*
-            Open specifically the
-            X-T50 camera.
-
-            We use deviceId instead of
-            facingMode so Safari does
-            not choose the iPad camera.
-        */
-
-        cameraStream =
-            await navigator.mediaDevices.getUserMedia({
-
-                video: {
-                    deviceId: {
-                        exact: selectedCameraId
-                    }
-                },
-
-                audio: false
-
-            });
-
-
-        /*
-            Show X-T50 live view.
-        */
-
-        camera.srcObject =
-            cameraStream;
-
+        camera.srcObject = cameraStream;
 
         await camera.play();
 
-
-        /*
-            Verify which camera
-            Safari actually opened.
-        */
-
-        const videoTrack =
-            cameraStream.getVideoTracks()[0];
-
-
-        const settings =
-            videoTrack.getSettings();
-
-
-        console.log(
-            "Active camera:",
-            settings
-        );
-
-
-        readyMessage.textContent =
-            "FUJIFILM X-T50 READY";
-
-
-        return true;
-
-
     } catch (error) {
-
-        console.error(
-            "Fujifilm camera error:",
-            error
-        );
-
+        console.error("Camera error:", error);
 
         alert(
-            "The Fujifilm X-T50 was found, " +
-            "but Safari could not open it.\n\n" +
-            "Make sure the camera is turned on, " +
-            "USB WEBCAM mode is selected, and the " +
-            "USB-C cable supports data."
+            "The camera could not be accessed. " +
+            "Please allow camera access and try again."
         );
-
-
-        return false;
     }
 }
 
 
-/* =========================================================
-   STOP CAMERA
-========================================================= */
-
 function stopCamera() {
-
     if (cameraStream) {
-
-        const tracks =
-            cameraStream.getTracks();
+        const tracks = cameraStream.getTracks();
 
         tracks.forEach(function(track) {
-
             track.stop();
-
         });
 
         cameraStream = null;
     }
 
     camera.srcObject = null;
-
-    selectedCameraId = null;
 }
 
 
-/* =========================================================
+/* =========================
    COUNTDOWN
-========================================================= */
+========================= */
 
 async function runCountdown() {
-
-    readyMessage.textContent =
-        "Get ready!";
-
+    readyMessage.textContent = "Get ready!";
 
     for (
         let number = COUNTDOWN_SECONDS;
         number > 0;
         number--
     ) {
-
-        countdown.textContent =
-            number;
+        countdown.textContent = number;
 
         await wait(1000);
-
     }
 
+    countdown.textContent = "";
 
-    countdown.textContent =
-        "";
-
-    readyMessage.textContent =
-        "Smile!";
+    readyMessage.textContent = "Smile!";
 }
 
 
-/* =========================================================
-   FLASH EFFECT
-========================================================= */
+/* =========================
+   FLASH
+========================= */
 
 async function triggerFlash() {
-
-    flash.classList.add(
-        "active"
-    );
+    flash.classList.add("active");
 
     await wait(150);
 
-    flash.classList.remove(
-        "active"
-    );
+    flash.classList.remove("active");
 }
 
 
-/* =========================================================
-   TAKE PHOTO FROM X-T50 VIDEO STREAM
-========================================================= */
+/* =========================
+   TAKE PHOTO
+========================= */
 
 function takePhoto() {
-
-    if (
-        !camera.videoWidth ||
-        !camera.videoHeight
-    ) {
-
-        console.error(
-            "Camera is not ready."
-        );
-
-        return false;
+    if (!camera.videoWidth || !camera.videoHeight) {
+        console.error("Camera is not ready.");
+        return;
     }
 
-
-    /*
-        Use the full resolution
-        available from the video stream.
-    */
-
-    captureCanvas.width =
-        camera.videoWidth;
-
-    captureCanvas.height =
-        camera.videoHeight;
-
+    captureCanvas.width = camera.videoWidth;
+    captureCanvas.height = camera.videoHeight;
 
     const context =
         captureCanvas.getContext("2d");
 
-
-    /*
-        Mirror the preview so
-        the captured image matches
-        the current booth behavior.
-    */
-
     context.save();
 
+    /*
+       Flip the image horizontally
+       so it matches the mirrored
+       camera preview.
+    */
 
     context.translate(
         captureCanvas.width,
         0
     );
 
-
-    context.scale(
-        -1,
-        1
-    );
-
+    context.scale(-1, 1);
 
     context.drawImage(
         camera,
@@ -505,13 +167,7 @@ function takePhoto() {
         captureCanvas.height
     );
 
-
     context.restore();
-
-
-    /*
-        Save with high JPEG quality.
-    */
 
     const image =
         captureCanvas.toDataURL(
@@ -519,96 +175,47 @@ function takePhoto() {
             0.95
         );
 
-
-    photos.push(
-        image
-    );
-
-
-    return true;
+    photos.push(image);
 }
 
 
-/* =========================================================
-   PROGRESS BAR
-========================================================= */
+/* =========================
+   PROGRESS
+========================= */
 
 function updateProgress() {
-
     const percentage =
         (currentPhoto / TOTAL_PHOTOS) * 100;
-
 
     progressBar.style.width =
         percentage + "%";
 }
 
 
-/* =========================================================
-   START PHOTO SESSION
-========================================================= */
+/* =========================
+   PHOTO SESSION
+========================= */
 
 async function startPhotoSession() {
-
     photos = [];
-
     currentPhoto = 0;
 
     photoGrid.innerHTML = "";
 
-    progressBar.style.width =
-        "0%";
+    progressBar.style.width = "0%";
 
+    showScreen(cameraScreen);
 
-    showScreen(
-        cameraScreen
-    );
+    await startCamera();
 
-
-    /*
-        Start the X-T50.
-    */
-
-    const cameraStarted =
-        await startCamera();
-
-
-    /*
-        Stop if the X-T50
-        could not be connected.
-    */
-
-    if (!cameraStarted) {
-
-        showScreen(
-            startScreen
-        );
-
-        return;
-    }
-
-
-    /*
-        Give the camera a moment
-        to stabilize.
-    */
-
-    await wait(1500);
-
-
-    /*
-        TAKE FOUR PHOTOS
-    */
+    await wait(1000);
 
     for (
         let i = 0;
         i < TOTAL_PHOTOS;
         i++
     ) {
-
-        currentPhoto =
-            i + 1;
-
+        currentPhoto = i + 1;
 
         photoNumber.textContent =
             "PHOTO " +
@@ -616,154 +223,77 @@ async function startPhotoSession() {
             " OF " +
             TOTAL_PHOTOS;
 
-
         updateProgress();
-
-
-        /*
-            Countdown
-        */
 
         await runCountdown();
 
-
-        /*
-            Flash effect
-        */
-
         await triggerFlash();
 
-
-        /*
-            Capture image from
-            X-T50 video stream
-        */
-
-        const photoTaken =
-            takePhoto();
-
-
-        if (!photoTaken) {
-
-            alert(
-                "The X-T50 was not ready to take the photo."
-            );
-
-            stopCamera();
-
-            showScreen(
-                startScreen
-            );
-
-            return;
-        }
-
+        takePhoto();
 
         readyMessage.textContent =
             "Photo taken!";
 
-
         await wait(1000);
     }
 
-
-    /*
-        Complete progress bar.
-    */
-
-    progressBar.style.width =
-        "100%";
-
+    progressBar.style.width = "100%";
 
     readyMessage.textContent =
         "All photos taken!";
 
-
     await wait(800);
 
-
-    /*
-        Stop X-T50 connection.
-    */
-
     stopCamera();
-
-
-    /*
-        Show review.
-    */
 
     showReview();
 }
 
 
-/* =========================================================
-   REVIEW PHOTOS
-========================================================= */
+/* =========================
+   REVIEW
+========================= */
 
 function showReview() {
-
-    photoGrid.innerHTML =
-        "";
-
+    photoGrid.innerHTML = "";
 
     photos.forEach(function(photo) {
-
         const image =
             document.createElement("img");
 
-
-        image.src =
-            photo;
-
+        image.src = photo;
 
         image.alt =
             "Photo booth picture";
 
-
-        photoGrid.appendChild(
-            image
-        );
-
+        photoGrid.appendChild(image);
     });
 
-
-    showScreen(
-        reviewScreen
-    );
+    showScreen(reviewScreen);
 }
 
 
-/* =========================================================
-   RETAKE PHOTOS
-========================================================= */
+/* =========================
+   RETAKE
+========================= */
 
 function retakePhotos() {
-
-    stopCamera();
-
     photos = [];
 
     currentPhoto = 0;
 
-    photoGrid.innerHTML =
-        "";
-
+    photoGrid.innerHTML = "";
 
     startPhotoSession();
 }
 
 
-/* =========================================================
+/* =========================
    CREATE PHOTO STRIP
-========================================================= */
+========================= */
 
 function createPhotoStrip() {
-
-    if (
-        photos.length !== TOTAL_PHOTOS
-    ) {
-
+    if (photos.length !== TOTAL_PHOTOS) {
         alert(
             "Please take all four photos first."
         );
@@ -771,39 +301,16 @@ function createPhotoStrip() {
         return;
     }
 
+    const canvasWidth = 1200;
+    const canvasHeight = 1800;
 
-    /*
-        4x6 inch paper at 300 DPI
-
-        4 inches = 1200 pixels
-        6 inches = 1800 pixels
-    */
-
-    const canvasWidth =
-        1200;
-
-    const canvasHeight =
-        1800;
-
-
-    stripCanvas.width =
-        canvasWidth;
-
-    stripCanvas.height =
-        canvasHeight;
-
+    stripCanvas.width = canvasWidth;
+    stripCanvas.height = canvasHeight;
 
     const context =
         stripCanvas.getContext("2d");
 
-
-    /*
-        WHITE PAPER
-    */
-
-    context.fillStyle =
-        "#ffffff";
-
+    context.fillStyle = "#ffffff";
 
     context.fillRect(
         0,
@@ -812,112 +319,58 @@ function createPhotoStrip() {
         canvasHeight
     );
 
+    const stripWidth = 520;
+    const stripHeight = 1680;
 
-    /*
-        STRIP SETTINGS
+    const leftStripX = 50;
+    const rightStripX = 630;
 
-        Each strip:
-        Width = 520 px
-        Height = 1680 px
+    const topMargin = 60;
 
-        Side border:
-        10 px
+    const sideBorder = 10;
+    const topBorder = 20;
 
-        Top border:
-        20 px
+    const bottomWhiteSpace = 300;
 
-        Bottom white space:
-        300 px = 1 inch
-
-        Photo gap:
-        15 px
-    */
-
-    const stripWidth =
-        520;
-
-    const stripHeight =
-        1680;
-
-    const leftStripX =
-        50;
-
-    const rightStripX =
-        630;
-
-    const topMargin =
-        60;
-
-    const sideBorder =
-        10;
-
-    const topBorder =
-        20;
-
-    const bottomWhiteSpace =
-        300;
-
-    const photoGap =
-        15;
-
-
-    /*
-        PHOTO WIDTH
-    */
+    const photoGap = 15;
 
     const photoAreaX =
         leftStripX +
         sideBorder;
 
-
     const photoAreaWidth =
         stripWidth -
         (sideBorder * 2);
-
-
-    /*
-        PHOTO HEIGHT
-    */
 
     const photoAreaHeight =
         stripHeight -
         topBorder -
         bottomWhiteSpace;
 
-
     const totalGapHeight =
         photoGap *
         (TOTAL_PHOTOS - 1);
 
-
     const totalPhotoHeight =
         photoAreaHeight -
         totalGapHeight;
-
 
     const photoHeight =
         totalPhotoHeight /
         TOTAL_PHOTOS;
 
 
-    /*
-        LEFT STRIP
-    */
+    /* LEFT STRIP */
 
     for (
         let i = 0;
         i < TOTAL_PHOTOS;
         i++
     ) {
-
         const y =
             topMargin +
             topBorder +
-            (i * (
-                photoHeight +
-                photoGap
-            ));
-
+            (i * (photoHeight + photoGap));
 
         drawCoverImage(
             context,
@@ -930,29 +383,21 @@ function createPhotoStrip() {
     }
 
 
-    /*
-        RIGHT STRIP
-    */
+    /* RIGHT STRIP */
 
     const rightPhotoAreaX =
         rightStripX +
         sideBorder;
-
 
     for (
         let i = 0;
         i < TOTAL_PHOTOS;
         i++
     ) {
-
         const y =
             topMargin +
             topBorder +
-            (i * (
-                photoHeight +
-                photoGap
-            ));
-
+            (i * (photoHeight + photoGap));
 
         drawCoverImage(
             context,
@@ -965,57 +410,35 @@ function createPhotoStrip() {
     }
 
 
-    /*
-        DASHED CENTER
-        CUTTING LINE
-    */
+    /* CENTER CUTTING LINE */
 
-    context.strokeStyle =
-        "#999999";
-
-    context.lineWidth =
-        2;
-
-    context.setLineDash([
-        10,
-        10
-    ]);
-
+    context.strokeStyle = "#999999";
+    context.lineWidth = 2;
+    context.setLineDash([10, 10]);
 
     context.beginPath();
-
 
     context.moveTo(
         canvasWidth / 2,
         20
     );
 
-
     context.lineTo(
         canvasWidth / 2,
         canvasHeight - 20
     );
 
-
     context.stroke();
-
 
     context.setLineDash([]);
 
-
-    /*
-        SHOW STRIP
-    */
-
-    showScreen(
-        stripScreen
-    );
+    showScreen(stripScreen);
 }
 
 
-/* =========================================================
-   DRAW PHOTO WITHOUT DISTORTION
-========================================================= */
+/* =========================
+   DRAW PHOTO
+========================= */
 
 function drawCoverImage(
     context,
@@ -1025,114 +448,86 @@ function drawCoverImage(
     width,
     height
 ) {
-
     const image =
         new Image();
 
+    image.onload = function() {
 
-    image.onload =
-        function() {
+        const imageRatio =
+            image.width /
+            image.height;
 
-            const imageRatio =
-                image.width /
-                image.height;
+        const boxRatio =
+            width /
+            height;
+
+        let drawWidth;
+        let drawHeight;
+        let offsetX;
+        let offsetY;
 
 
-            const boxRatio =
+        if (imageRatio > boxRatio) {
+
+            drawHeight = height;
+
+            drawWidth =
+                height *
+                imageRatio;
+
+            offsetX =
+                x +
+                (width - drawWidth) / 2;
+
+            offsetY = y;
+
+        } else {
+
+            drawWidth = width;
+
+            drawHeight =
                 width /
-                height;
+                imageRatio;
+
+            offsetX = x;
+
+            offsetY =
+                y +
+                (height - drawHeight) / 2;
+        }
 
 
-            let drawWidth;
+        context.save();
 
-            let drawHeight;
+        context.beginPath();
 
-            let offsetX;
+        context.rect(
+            x,
+            y,
+            width,
+            height
+        );
 
-            let offsetY;
+        context.clip();
 
+        context.drawImage(
+            image,
+            offsetX,
+            offsetY,
+            drawWidth,
+            drawHeight
+        );
 
-            if (
-                imageRatio >
-                boxRatio
-            ) {
+        context.restore();
+    };
 
-                drawHeight =
-                    height;
-
-
-                drawWidth =
-                    height *
-                    imageRatio;
-
-
-                offsetX =
-                    x +
-                    (width - drawWidth) / 2;
-
-
-                offsetY =
-                    y;
-
-            } else {
-
-                drawWidth =
-                    width;
-
-
-                drawHeight =
-                    width /
-                    imageRatio;
-
-
-                offsetX =
-                    x;
-
-
-                offsetY =
-                    y +
-                    (height - drawHeight) / 2;
-            }
-
-
-            context.save();
-
-
-            context.beginPath();
-
-
-            context.rect(
-                x,
-                y,
-                width,
-                height
-            );
-
-
-            context.clip();
-
-
-            context.drawImage(
-                image,
-                offsetX,
-                offsetY,
-                drawWidth,
-                drawHeight
-            );
-
-
-            context.restore();
-        };
-
-
-    image.src =
-        imageSource;
+    image.src = imageSource;
 }
 
 
-/* =========================================================
+/* =========================
    PRINT
-========================================================= */
+========================= */
 
 function printPhotoStrip() {
 
@@ -1141,13 +536,11 @@ function printPhotoStrip() {
             "image/png"
         );
 
-
     const printWindow =
         window.open(
             "",
             "_blank"
         );
-
 
     if (!printWindow) {
 
@@ -1160,6 +553,7 @@ function printPhotoStrip() {
 
 
     printWindow.document.write(`
+
         <!DOCTYPE html>
 
         <html>
@@ -1241,85 +635,64 @@ function printPhotoStrip() {
         </html>
     `);
 
-
     printWindow.document.close();
 }
 
 
-/* =========================================================
+/* =========================
    NEXT SESSION
-========================================================= */
+========================= */
 
 function nextSession() {
 
     stopCamera();
 
-
     photos = [];
 
     currentPhoto = 0;
 
+    photoGrid.innerHTML = "";
 
-    photoGrid.innerHTML =
-        "";
+    stripCanvas.width = 1;
+    stripCanvas.height = 1;
 
+    progressBar.style.width = "0%";
 
-    stripCanvas.width =
-        1;
-
-    stripCanvas.height =
-        1;
-
-
-    progressBar.style.width =
-        "0%";
-
-
-    countdown.textContent =
-        "";
-
+    countdown.textContent = "";
 
     photoNumber.textContent =
         "PHOTO 1 OF 4";
 
-
     readyMessage.textContent =
         "Get ready!";
 
-
-    showScreen(
-        startScreen
-    );
+    showScreen(startScreen);
 }
 
 
-/* =========================================================
-   BUTTON EVENTS
-========================================================= */
+/* =========================
+   BUTTONS
+========================= */
 
 startButton.addEventListener(
     "click",
     startPhotoSession
 );
 
-
 retakeButton.addEventListener(
     "click",
     retakePhotos
 );
-
 
 createStripButton.addEventListener(
     "click",
     createPhotoStrip
 );
 
-
 printButton.addEventListener(
     "click",
     printPhotoStrip
 );
-
 
 nextSessionButton.addEventListener(
     "click",
@@ -1327,10 +700,8 @@ nextSessionButton.addEventListener(
 );
 
 
-/* =========================================================
-   START ON HOME SCREEN
-========================================================= */
+/* =========================
+   INITIAL SCREEN
+========================= */
 
-showScreen(
-    startScreen
-);
+showScreen(startScreen);
