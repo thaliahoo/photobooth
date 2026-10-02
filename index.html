@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Booth</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         START SCREEN
+         ========================= -->
+    <section id="startScreen" class="screen start-screen">
+
+        <div class="camera-icon">📸</div>
+
+        <h1>PHOTO BOOTH</h1>
+
+        <p>Take four photos and create your photo strip.</p>
+
+        <button id="startButton" class="start-button">
+            START
+        </button>
+
+    </section>
+
+
+    <!-- =========================
+         CAMERA SCREEN
+         ========================= -->
+    <section id="cameraScreen" class="screen camera-screen hidden">
+
+        <div class="camera-container">
+
+            <video
+                id="camera"
+                autoplay
+                playsinline
+                muted>
+            </video>
+
+            <div class="camera-overlay">
+
+                <div id="photoNumber" class="photo-number">
+                    PHOTO 1 OF 4
+                </div>
+
+                <div id="countdown" class="countdown">
+                    3
+                </div>
+
+                <div id="readyMessage" class="ready-message">
+                    Get ready!
+                </div>
+
+                <div class="progress-container">
+                    <div
+                        id="progressBar"
+                        class="progress-bar">
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="flash" class="flash"></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         REVIEW SCREEN
+         ========================= -->
+    <section id="reviewScreen" class="screen review-screen hidden">
+
+        <h2>YOUR PHOTOS</h2>
+
+        <div id="photoGrid" class="photo-grid">
+            <!-- Photos are added here by JavaScript -->
+        </div>
+
+        <div class="review-buttons">
+
+            <button
+                id="retakeButton"
+                class="secondary-button">
+                RETAKE
+            </button>
+
+            <button
+                id="createStripButton"
+                class="primary-button">
+                CREATE STRIP
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         PHOTO STRIP SCREEN
+         ========================= -->
+    <section id="stripScreen" class="screen strip-screen hidden">
+
+        <h2>YOUR PHOTO STRIP</h2>
+
+        <div class="strip-preview">
+
+            <canvas id="stripCanvas"></canvas>
+
+        </div>
+
+        <div class="strip-buttons">
+
+            <button
+                id="printButton"
+                class="print-button">
+                PRINT
+            </button>
+
+            <button
+                id="nextSessionButton"
+                class="next-button">
+                NEXT SESSION
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         HIDDEN PHOTO CANVAS
+         ========================= -->
+    <canvas
+        id="captureCanvas"
+        class="hidden">
+    </canvas>
+
+
+    <script src="app.js"></script>
+
+</body>
+</html>
