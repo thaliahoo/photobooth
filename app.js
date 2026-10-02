@@ -128,7 +128,38 @@ function takePhoto() {
     const context =
         captureCanvas.getContext("2d");
 
+    /*
+        Crop the sides of the iPad
+        camera image to reduce the
+        wide-angle appearance.
+
+        0.82 = keep 82% of the
+        original image width.
+
+        Increase toward 1.0 for
+        less zoom.
+        Decrease for more zoom.
+    */
+
+    const cropAmount = 0.82;
+
+    const sourceWidth =
+        camera.videoWidth * cropAmount;
+
+    const sourceHeight =
+        camera.videoHeight;
+
+    const sourceX =
+        (camera.videoWidth - sourceWidth) / 2;
+
+    const sourceY = 0;
+
     context.save();
+
+    /*
+        Keep the image mirrored
+        like the preview.
+    */
 
     context.translate(
         captureCanvas.width,
@@ -139,6 +170,10 @@ function takePhoto() {
 
     context.drawImage(
         camera,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
         0,
         0,
         captureCanvas.width,
