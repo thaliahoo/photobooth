@@ -1,23 +1,9 @@
-// =========================
-// PHOTO BOOTH SETTINGS
-// =========================
-
 const TOTAL_PHOTOS = 4;
 const COUNTDOWN_SECONDS = 3;
-
-
-// =========================
-// PHOTO BOOTH STATE
-// =========================
 
 let photos = [];
 let currentPhoto = 0;
 let cameraStream = null;
-
-
-// =========================
-// GET HTML ELEMENTS
-// =========================
 
 const startScreen = document.getElementById("startScreen");
 const cameraScreen = document.getElementById("cameraScreen");
@@ -46,12 +32,7 @@ const printButton = document.getElementById("printButton");
 const nextSessionButton = document.getElementById("nextSessionButton");
 
 
-// =========================
-// SCREEN CONTROL
-// =========================
-
 function showScreen(screen) {
-
     startScreen.classList.add("hidden");
     cameraScreen.classList.add("hidden");
     reviewScreen.classList.add("hidden");
@@ -61,26 +42,15 @@ function showScreen(screen) {
 }
 
 
-// =========================
-// WAIT FUNCTION
-// =========================
-
 function wait(milliseconds) {
-
     return new Promise(function(resolve) {
         setTimeout(resolve, milliseconds);
     });
 }
 
 
-// =========================
-// START CAMERA
-// =========================
-
 async function startCamera() {
-
     try {
-
         cameraStream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: "user"
@@ -93,7 +63,6 @@ async function startCamera() {
         await camera.play();
 
     } catch (error) {
-
         console.error("Camera error:", error);
 
         alert(
@@ -104,14 +73,8 @@ async function startCamera() {
 }
 
 
-// =========================
-// STOP CAMERA
-// =========================
-
 function stopCamera() {
-
     if (cameraStream) {
-
         const tracks = cameraStream.getTracks();
 
         tracks.forEach(function(track) {
@@ -125,12 +88,7 @@ function stopCamera() {
 }
 
 
-// =========================
-// COUNTDOWN
-// =========================
-
 async function runCountdown() {
-
     readyMessage.textContent = "Get ready!";
 
     for (
@@ -138,7 +96,6 @@ async function runCountdown() {
         number > 0;
         number--
     ) {
-
         countdown.textContent = number;
 
         await wait(1000);
@@ -150,12 +107,7 @@ async function runCountdown() {
 }
 
 
-// =========================
-// CAMERA FLASH
-// =========================
-
 async function triggerFlash() {
-
     flash.classList.add("active");
 
     await wait(150);
@@ -164,25 +116,18 @@ async function triggerFlash() {
 }
 
 
-// =========================
-// TAKE PHOTO
-// =========================
-
 function takePhoto() {
-
     if (!camera.videoWidth || !camera.videoHeight) {
-
         console.error("Camera is not ready.");
-
         return;
     }
 
     captureCanvas.width = camera.videoWidth;
     captureCanvas.height = camera.videoHeight;
 
-    const context = captureCanvas.getContext("2d");
+    const context =
+        captureCanvas.getContext("2d");
 
-    // Mirror the photo to match the camera preview
     context.save();
 
     context.translate(
@@ -205,19 +150,14 @@ function takePhoto() {
     const image =
         captureCanvas.toDataURL(
             "image/jpeg",
-            0.92
+            0.95
         );
 
     photos.push(image);
 }
 
 
-// =========================
-// UPDATE PROGRESS
-// =========================
-
 function updateProgress() {
-
     const percentage =
         (currentPhoto / TOTAL_PHOTOS) * 100;
 
@@ -226,12 +166,7 @@ function updateProgress() {
 }
 
 
-// =========================
-// START PHOTO SESSION
-// =========================
-
 async function startPhotoSession() {
-
     photos = [];
     currentPhoto = 0;
 
@@ -243,7 +178,6 @@ async function startPhotoSession() {
 
     await startCamera();
 
-    // Give the camera time to initialize
     await wait(1000);
 
     for (
@@ -251,7 +185,6 @@ async function startPhotoSession() {
         i < TOTAL_PHOTOS;
         i++
     ) {
-
         currentPhoto = i + 1;
 
         photoNumber.textContent =
@@ -287,16 +220,10 @@ async function startPhotoSession() {
 }
 
 
-// =========================
-// SHOW REVIEW
-// =========================
-
 function showReview() {
-
     photoGrid.innerHTML = "";
 
     photos.forEach(function(photo) {
-
         const image =
             document.createElement("img");
 
@@ -312,12 +239,7 @@ function showReview() {
 }
 
 
-// =========================
-// RETAKE PHOTOS
-// =========================
-
 function retakePhotos() {
-
     photos = [];
 
     currentPhoto = 0;
@@ -328,14 +250,8 @@ function retakePhotos() {
 }
 
 
-// =========================
-// CREATE 4x6 PHOTO STRIP
-// =========================
-
 function createPhotoStrip() {
-
     if (photos.length !== TOTAL_PHOTOS) {
-
         alert(
             "Please take all four photos first."
         );
@@ -344,10 +260,12 @@ function createPhotoStrip() {
     }
 
 
-    // =========================
-    // 4x6 PAPER
-    // 300 DPI
-    // =========================
+    /*
+        4x6 inch paper at 300 DPI
+
+        4 inches = 1200 pixels
+        6 inches = 1800 pixels
+    */
 
     const canvasWidth = 1200;
     const canvasHeight = 1800;
@@ -359,9 +277,9 @@ function createPhotoStrip() {
         stripCanvas.getContext("2d");
 
 
-    // =========================
-    // WHITE PAPER
-    // =========================
+    /*
+        WHITE PAPER BACKGROUND
+    */
 
     context.fillStyle = "#ffffff";
 
@@ -373,9 +291,28 @@ function createPhotoStrip() {
     );
 
 
-    // =========================
-    // STRIP DIMENSIONS
-    // =========================
+    /*
+        STRIP SETTINGS
+
+        Each strip:
+        Width = 520 px
+        Height = 1680 px
+
+        White outside border:
+        10 px left
+        10 px right
+        20 px top
+
+        Bottom white space:
+        300 px = 1 inch
+
+        Gap between photos:
+        15 px
+
+        The photos are made
+        slightly larger by
+        reducing the side border.
+    */
 
     const stripWidth = 520;
 
@@ -387,21 +324,72 @@ function createPhotoStrip() {
 
     const topMargin = 60;
 
-    const textAreaHeight = 100;
+    const sideBorder = 10;
+
+    const topBorder = 20;
+
+    const bottomWhiteSpace = 300;
+
+    const photoGap = 15;
+
+
+    /*
+        PHOTO AREA
+    */
+
+    const photoAreaX =
+        leftStripX +
+        sideBorder;
+
+    const photoAreaWidth =
+        stripWidth -
+        (sideBorder * 2);
+
+
+    /*
+        PHOTO HEIGHT
+
+        Keep a full 1-inch
+        white section at
+        the bottom.
+    */
 
     const photoAreaHeight =
         stripHeight -
-        textAreaHeight;
+        topBorder -
+        bottomWhiteSpace;
+
+
+    /*
+        Calculate the total
+        space used by the
+        three photo gaps.
+    */
+
+    const totalGapHeight =
+        photoGap *
+        (TOTAL_PHOTOS - 1);
+
+
+    /*
+        Calculate the space
+        available for the
+        actual photos.
+    */
+
+    const totalPhotoHeight =
+        photoAreaHeight -
+        totalGapHeight;
+
 
     const photoHeight =
-        photoAreaHeight /
+        totalPhotoHeight /
         TOTAL_PHOTOS;
 
 
-    // =========================
-    // DRAW FOUR PHOTOS
-    // ON BOTH STRIPS
-    // =========================
+    /*
+        LEFT STRIP
+    */
 
     for (
         let i = 0;
@@ -411,60 +399,57 @@ function createPhotoStrip() {
 
         const y =
             topMargin +
-            (i * photoHeight);
+            topBorder +
+            (i * (photoHeight + photoGap));
 
-
-        // LEFT STRIP
 
         drawCoverImage(
             context,
             photos[i],
-            leftStripX,
+            photoAreaX,
             y,
-            stripWidth,
-            photoHeight
-        );
-
-
-        // RIGHT STRIP
-
-        drawCoverImage(
-            context,
-            photos[i],
-            rightStripX,
-            y,
-            stripWidth,
+            photoAreaWidth,
             photoHeight
         );
     }
 
 
-    // =========================
-    // STRIP BORDERS
-    // =========================
+    /*
+        RIGHT STRIP
+    */
 
-    context.strokeStyle = "#000000";
-
-    context.lineWidth = 4;
-
-    context.strokeRect(
-        leftStripX,
-        topMargin,
-        stripWidth,
-        stripHeight
-    );
-
-    context.strokeRect(
-        rightStripX,
-        topMargin,
-        stripWidth,
-        stripHeight
-    );
+    const rightPhotoAreaX =
+        rightStripX +
+        sideBorder;
 
 
-    // =========================
-    // CENTER CUT LINE
-    // =========================
+    for (
+        let i = 0;
+        i < TOTAL_PHOTOS;
+        i++
+    ) {
+
+        const y =
+            topMargin +
+            topBorder +
+            (i * (photoHeight + photoGap));
+
+
+        drawCoverImage(
+            context,
+            photos[i],
+            rightPhotoAreaX,
+            y,
+            photoAreaWidth,
+            photoHeight
+        );
+    }
+
+
+    /*
+        DASHED CENTER
+        CUTTING LINE
+    */
 
     context.strokeStyle = "#999999";
 
@@ -492,54 +477,13 @@ function createPhotoStrip() {
     context.setLineDash([]);
 
 
-    // =========================
-    // TEXT
-    // =========================
-
-    context.fillStyle = "#222222";
-
-    context.font =
-        "bold 32px Arial";
-
-    context.textAlign =
-        "center";
-
-
-    // LEFT TEXT
-
-    context.fillText(
-        "MY PHOTO BOOTH",
-        leftStripX +
-        (stripWidth / 2),
-        topMargin +
-        stripHeight -
-        35
-    );
-
-
-    // RIGHT TEXT
-
-    context.fillText(
-        "MY PHOTO BOOTH",
-        rightStripX +
-        (stripWidth / 2),
-        topMargin +
-        stripHeight -
-        35
-    );
-
-
-    // =========================
-    // SHOW PRINT PREVIEW
-    // =========================
+    /*
+        SHOW FINISHED STRIP
+    */
 
     showScreen(stripScreen);
 }
 
-
-// =========================
-// DRAW PHOTO INTO STRIP
-// =========================
 
 function drawCoverImage(
     context,
@@ -564,21 +508,18 @@ function drawCoverImage(
             width /
             height;
 
-
         let drawWidth;
+
         let drawHeight;
+
         let offsetX;
+
         let offsetY;
 
 
-        // =========================
-        // COVER IMAGE
-        // =========================
-
         if (imageRatio > boxRatio) {
 
-            drawHeight =
-                height;
+            drawHeight = height;
 
             drawWidth =
                 height *
@@ -586,34 +527,25 @@ function drawCoverImage(
 
             offsetX =
                 x +
-                (width -
-                drawWidth) / 2;
+                (width - drawWidth) / 2;
 
-            offsetY =
-                y;
+            offsetY = y;
 
         } else {
 
-            drawWidth =
-                width;
+            drawWidth = width;
 
             drawHeight =
                 width /
                 imageRatio;
 
-            offsetX =
-                x;
+            offsetX = x;
 
             offsetY =
                 y +
-                (height -
-                drawHeight) / 2;
+                (height - drawHeight) / 2;
         }
 
-
-        // =========================
-        // CLIP PHOTO
-        // =========================
 
         context.save();
 
@@ -629,10 +561,6 @@ function drawCoverImage(
         context.clip();
 
 
-        // =========================
-        // DRAW PHOTO
-        // =========================
-
         context.drawImage(
             image,
             offsetX,
@@ -646,14 +574,9 @@ function drawCoverImage(
     };
 
 
-    image.src =
-        imageSource;
+    image.src = imageSource;
 }
 
-
-// =========================
-// PRINT PHOTO STRIP
-// =========================
 
 function printPhotoStrip() {
 
@@ -681,17 +604,17 @@ function printPhotoStrip() {
 
 
     printWindow.document.write(`
-
         <!DOCTYPE html>
 
         <html>
 
         <head>
 
-            <title>
-                Photo Booth 4x6
-            </title>
+            <meta charset="UTF-8">
 
+            <title>
+                4x6 Photo Booth Print
+            </title>
 
             <style>
 
@@ -700,104 +623,91 @@ function printPhotoStrip() {
                     margin: 0;
                 }
 
+                * {
+                    box-sizing: border-box;
+                }
 
                 html,
                 body {
-
                     width: 4in;
                     height: 6in;
-
                     margin: 0;
                     padding: 0;
-
+                    overflow: hidden;
                     background: white;
-
                 }
-
 
                 body {
-
-                    display: flex;
-
-                    justify-content: center;
-
-                    align-items: center;
-
+                    display: block;
                 }
 
-
                 img {
-
+                    display: block;
                     width: 4in;
                     height: 6in;
-
-                    display: block;
-
+                    margin: 0;
+                    padding: 0;
+                    object-fit: fill;
                 }
 
             </style>
 
         </head>
 
-
         <body>
 
             <img
                 src="${imageData}"
-                alt="Photo booth strip"
+                alt="Photo Booth Print"
             >
+
+            <script>
+
+                window.onload = function() {
+
+                    setTimeout(
+                        function() {
+
+                            window.focus();
+
+                            window.print();
+
+                        },
+                        500
+                    );
+
+                };
+
+            <\/script>
 
         </body>
 
         </html>
-
     `);
 
 
     printWindow.document.close();
-
-
-    printWindow.onload =
-        function() {
-
-            printWindow.focus();
-
-            printWindow.print();
-
-        };
 }
 
 
-// =========================
-// NEXT SESSION
-// =========================
-
 function nextSession() {
 
-    // Stop camera if it is running
     stopCamera();
 
-
-    // Clear all photos
     photos = [];
 
     currentPhoto = 0;
 
-
-    // Clear review photos
     photoGrid.innerHTML = "";
 
 
-    // Reset strip canvas
     stripCanvas.width = 1;
+
     stripCanvas.height = 1;
 
 
-    // Reset progress
     progressBar.style.width = "0%";
 
-
-    // Reset camera text
     countdown.textContent = "";
 
     photoNumber.textContent =
@@ -807,38 +717,33 @@ function nextSession() {
         "Get ready!";
 
 
-    // Return to home
     showScreen(startScreen);
 }
 
 
-// =========================
-// BUTTON CONNECTIONS
-// =========================
+/*
+    BUTTON EVENTS
+*/
 
 startButton.addEventListener(
     "click",
     startPhotoSession
 );
 
-
 retakeButton.addEventListener(
     "click",
     retakePhotos
 );
-
 
 createStripButton.addEventListener(
     "click",
     createPhotoStrip
 );
 
-
 printButton.addEventListener(
     "click",
     printPhotoStrip
 );
-
 
 nextSessionButton.addEventListener(
     "click",
@@ -846,8 +751,8 @@ nextSessionButton.addEventListener(
 );
 
 
-// =========================
-// INITIAL SCREEN
-// =========================
+/*
+    START ON HOME SCREEN
+*/
 
 showScreen(startScreen);
